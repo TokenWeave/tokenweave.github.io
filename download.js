@@ -3,6 +3,7 @@
   const api = "https://tokenweave-download.onrender.com";
   const form = document.getElementById("model-download-form");
   const button = document.getElementById("model-download");
+  const hero = document.getElementById("hero-download");
   const checksum = document.getElementById("model-checksum");
   const key = document.getElementById("download-key");
   const status = document.getElementById("download-status");
@@ -29,6 +30,8 @@
       state === "checking" ? "Checking service…" :
       state === "waking" ? "Waiting for service…" :
       state === "initial" ? "Download model — allow 1–2 min" : "Check again";
+    hero.disabled = button.disabled;
+    hero.textContent = button.textContent;
     form.setAttribute("aria-busy", String(button.disabled));
     timer.hidden = state !== "waking";
     progress.hidden = state !== "waking";
@@ -117,18 +120,26 @@
     show("timeout", "SERVICE NOT RESPONDING",
       "No valid response after three minutes. Try again later. The timer is an estimate, not deployment progress.");
   }
-  form.addEventListener("submit", event => event.preventDefault());
+  form.addEventListener("submit", event => {
+    event.preventDefault();
+    if (!button.disabled) check("model");
+  });
+  hero.addEventListener("click", () => {
+    document.getElementById("download").scrollIntoView({block:"start"});
+    if (!button.disabled) check("model");
+  });
   button.addEventListener("click", () => {
     if (button.disabled) return;
-    if (phase === "ready") {
-      // Recheck on every download: the service may have gone idle since the last check.
-      check("model");
-    } else check("model");
+    // Recheck on every download: the service may have gone idle since the last check.
+    check("model");
   });
   checksum.addEventListener("click", () => {
     if (!checksum.disabled) check("checksum");
   });
   // User-initiated checks only: do not keep a free service awake in the background.
   window.addEventListener("pagehide", () => { generation++; stop(); });
+  window.addEventListener("pageshow", event => {
+    if (event.persisted) show("initial", "NOT CHECKED", "Click Download model to check the service.");
+  });
   show("initial", "NOT CHECKED", "Click Download model to check the service. First access may take 1–2 minutes.");
 })();
